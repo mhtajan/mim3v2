@@ -1,4 +1,4 @@
-const { Manager } = require("moonlink.js");
+const { Manager, PlayerManager } = require("moonlink.js");
 const fetch = require('isomorphic-unfetch')
 const { getData, getPreview, getTracks, getDetails } =
   require('spotify-url-info')(fetch)
@@ -26,26 +26,27 @@ client.moonlink = new Manager({
 client.moonlink.on("nodeCreate", node => {
     console.log(`${node.host} was connected`);
 });
-
 client.moonlink.on("trackStart", async (player, track) => {
+    
     client.channels.cache
         .get(player.textChannelId)
-        .send(`Now playing: ${track.title}`);
+        .send(`Now playing: ${player.current.title}`);
     client.user.setPresence({
         status: 'online',
         activities: [{
             name: track.title,
-            type: ActivityType.Listening
+            type: ActivityType.Watching,
+            url: track.url,
         }]
     }
     )
 });
-// needs fixing 
-// client.moonlink.on("trackEnd", async (player, track) => {
-//     client.channels.cache
-//         .get(player.textChannelId)
-//         .send(`Track ended: ${track.title}`);
-// });
+
+client.moonlink.on("trackEnd", async (player, track, payload) => {
+    client.channels.cache
+        .get(player.textChannelId)
+        .send(`Track ended: ${player.previous.title}`);
+});
 
 // Client Events
 client.on("ready", () => {
@@ -94,6 +95,7 @@ function getQueue(interaction) {
 }
 
 // Command Functions
+
 async function play(interaction) {
     if (!checkVoiceChannel(interaction)) return;
 
@@ -122,7 +124,6 @@ async function play(interaction) {
                     source: "youtube",
                     requester: interaction.user.id,
                 });
-            
                 if (res.loadType === "loadfailed") {
                     
                 } else if (res.loadType === "empty") {
@@ -141,11 +142,15 @@ async function play(interaction) {
                     trackLoad.push(res.tracks[0]);
                 }
             }
+            if (trackLoad.length > 1) {
                 const trackAdded = trackLoad
                 .map((tr, ix) => `${ix + 1}. ${tr.title}`)
                 .join("\n")
                 interaction.editReply(`Tracks added:\n${trackAdded}`)
-
+            }
+            else if(trackLoad.length === 1){
+                interaction.editReply(`Track added to the queue: ${trackLoad[0].title}`);
+            }
         } catch (error) {
             interaction.reply({
                 content: `An error occurred: ${error.message}`,
@@ -173,13 +178,6 @@ async function play(interaction) {
             });
         }
         if(res.loadType === "error") {
-            qr = res.query.toString();
-            if(qr.includes("spotify")){
-                return interaction.reply({
-                    content: `Spotify links are not supported at the moment.`,
-                    ephemeral: true,
-                });
-            }
             return interaction.reply({
                 content: `${res.error.message}`,
                 ephemeral: true,
@@ -280,6 +278,9 @@ async function nonStop(interaction) {
     interaction.reply(
         `Non-stop mode is now **${player.autoLeave ? "enabled" : "disabled"}**`
     );
+}
+async function clearQueue(interaction) {
+
 }
 // Interaction Handler
 client.on(Events.InteractionCreate, async interaction => {
