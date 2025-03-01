@@ -38,7 +38,6 @@ const playerEmbeds = new Map(); // memory cache for player embeds
 
 client.moonlink.on("trackStart", async (player, track) => {
   const textChannel = client.channels.cache.get(player.textChannelId);
-  await interaction.deferReply();
   if (!textChannel) return;
 
   const playerEmbed = new EmbedBuilder()
@@ -55,7 +54,7 @@ client.moonlink.on("trackStart", async (player, track) => {
       const oldMessage = await textChannel.messages.fetch(messageId);
       await oldMessage
         .delete()
-        .catch(() => console.log("Failed to delete old embed."));
+        .catch((err) => console.log("Failed to delete old embed.", err));
     } catch (err) {
       console.error("Error fetching/deleting old embed:", err);
     }
@@ -295,11 +294,71 @@ async function skip(interaction) {
 async function queue(interaction) {
   const queue = getQueue(interaction);
   if (!queue) return;
-  const queueList = queue.tracks
-    .map((track, index) => `${index + 1}. ${track.title}`)
-    .join("\n");
-  interaction.reply(`Current queue:\n${queueList}`);
-  setTimeout(() => interaction.deleteReply(), 10000);
+//   const queueList = queue.tracks
+//     .map((track, index) => `${index + 1}. ${track.title}`)
+//     .join("\n");
+//   interaction.reply(`Current queue:\n${queueList}`);
+//   setTimeout(() => interaction.deleteReply(), 10000);
+const tracksPerPage = 10;
+const pages = [];
+
+// Splitting queue into pages
+for (let i = 0; i < queue.tracks.length; i += tracksPerPage) {
+    const trackList = queue.tracks
+        .slice(i, i + tracksPerPage)
+        .map((track, index) => `**${i + index + 1}.** ${track.title}`)
+        .join("\n");
+
+    const embed = new EmbedBuilder()
+        .setTitle("🎶 Music Queue")
+        .setDescription(trackList || "No tracks in queue.")
+        .setFooter({ text: `Page ${Math.ceil(i / tracksPerPage) + 1} of ${Math.ceil(queue.tracks.length / tracksPerPage)}` })
+        .setTimestamp();
+
+    pages.push(embed);
+}
+
+let currentPage = 0;
+
+const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+        .setCustomId("prev")
+        .setLabel("◀️ Previous")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(currentPage === 0),
+
+    new ButtonBuilder()
+        .setCustomId("next")
+        .setLabel("▶️ Next")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pages.length === 1)
+);
+
+// Send first page
+const message = await interaction.editReply({ embeds: [pages[currentPage]], components: [row], fetchReply: true });
+
+// Create button collector
+const filter = (i) => i.user.id === interaction.user.id;
+const collector = message.createMessageComponentCollector({ filter, time: 60000 }); // 1 min timeout
+
+collector.on("collect", async (i) => {
+    if (i.customId === "prev") {
+        currentPage = Math.max(currentPage - 1, 0);
+    } else if (i.customId === "next") {
+        currentPage = Math.min(currentPage + 1, pages.length - 1);
+    }
+
+    // Update buttons
+    row.components[0].setDisabled(currentPage === 0);
+    row.components[1].setDisabled(currentPage === pages.length - 1);
+
+    await i.update({ embeds: [pages[currentPage]], components: [row] });
+});
+
+collector.on("end", () => {
+    message.edit({ components: [] }).catch(() => {});
+});
+
 }
 async function stop(interaction) {
   if (!checkVoiceChannel(interaction)) return;
