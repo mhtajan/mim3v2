@@ -1,5 +1,10 @@
 const { Manager, PlayerManager } = require("moonlink.js");
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const fetch = require("isomorphic-unfetch");
 const { getData, getPreview, getTracks, getDetails } =
   require("spotify-url-info")(fetch);
@@ -32,42 +37,46 @@ client.moonlink.on("nodeCreate", (node) => {
 const playerEmbeds = new Map(); // memory cache for player embeds
 
 client.moonlink.on("trackStart", async (player, track) => {
-    const textChannel = client.channels.cache.get(player.textChannelId);
-    
-    if (!textChannel) return;
+  const textChannel = client.channels.cache.get(player.textChannelId);
+  await interaction.deferReply();
+  if (!textChannel) return;
 
-    const playerEmbed = new EmbedBuilder()
-        .setTitle(`${track.title}`)
-        .setURL(track.url)
-        .setImage(track.artworkUrl)
-        .setTimestamp()
-        .setFooter({ text: "Now Playing 🎵" });
+  const playerEmbed = new EmbedBuilder()
+    .setTitle(`${track.title}`)
+    .setURL(track.url)
+    .setImage(track.artworkUrl)
+    .setTimestamp()
+    .setFooter({ text: "Now Playing 🎵" });
 
-    // Delete the old embed if it exists
-    if (playerEmbeds.has(player.textChannelId)) {
-        const messageId = playerEmbeds.get(player.textChannelId);
-        try {
-            const oldMessage = await textChannel.messages.fetch(messageId);
-            await oldMessage.delete().catch(() => console.log("Failed to delete old embed."));
-        } catch (err) {
-            console.error("Error fetching/deleting old embed:", err);
-        }
+  // Delete the old embed if it exists
+  if (playerEmbeds.has(player.textChannelId)) {
+    const messageId = playerEmbeds.get(player.textChannelId);
+    try {
+      const oldMessage = await textChannel.messages.fetch(messageId);
+      await oldMessage
+        .delete()
+        .catch(() => console.log("Failed to delete old embed."));
+    } catch (err) {
+      console.error("Error fetching/deleting old embed:", err);
     }
+  }
 
-    // Send new embed and store the message ID
-    const newMessage = await textChannel.send({ embeds: [playerEmbed] });
-    playerEmbeds.set(player.textChannelId, newMessage.id);
+  // Send new embed and store the message ID
+  const newMessage = await textChannel.send({ embeds: [playerEmbed] });
+  playerEmbeds.set(player.textChannelId, newMessage.id);
 
-    client.user.setPresence({
-        status: "online",
-        activities: [{ name: track.title, type: ActivityType.Watching, url: track.url }],
-    });
+  client.user.setPresence({
+    status: "online",
+    activities: [
+      { name: track.title, type: ActivityType.Watching, url: track.url },
+    ],
+  });
 });
 
 client.moonlink.on("trackEnd", async (player, track, payload) => {
   client.user.setPresence({
-        status: "online",
-      });
+    status: "online",
+  });
 });
 
 // Client Events
@@ -103,12 +112,15 @@ function getPlayer(interaction) {
 }
 
 function getQueue(interaction) {
-const player = getPlayer(interaction);
-if (!player) return null;
+  const player = getPlayer(interaction);
+  if (!player) return null;
 
   const queue = player.queue;
   if (!queue || queue.tracks.length === 0) {
-    interaction.reply({ content: "The queue is currently empty.", fetchReply: true });
+    interaction.reply({
+      content: "The queue is currently empty.",
+      fetchReply: true,
+    });
     setTimeout(() => interaction.deleteReply(), 10000);
     return null;
   }
@@ -276,7 +288,7 @@ async function skip(interaction) {
 
   const player = getPlayer(interaction);
   if (!player) return;
-if(!player.queue) return;
+  if (!player.queue) return;
   player.skip();
   interaction.reply("Track skipped.");
 }
@@ -287,6 +299,7 @@ async function queue(interaction) {
     .map((track, index) => `${index + 1}. ${track.title}`)
     .join("\n");
   interaction.reply(`Current queue:\n${queueList}`);
+  setTimeout(() => interaction.deleteReply(), 10000);
 }
 async function stop(interaction) {
   if (!checkVoiceChannel(interaction)) return;
@@ -319,8 +332,7 @@ async function nonStop(interaction) {
     `Non-stop mode is now **${player.autoLeave ? "enabled" : "disabled"}**`
   );
 }
-async function clearQueue(interaction) {
-}
+async function clearQueue(interaction) {}
 async function lyrics(interaction) {
   if (!checkVoiceChannel(interaction)) return;
   const player = getPlayer(interaction);
