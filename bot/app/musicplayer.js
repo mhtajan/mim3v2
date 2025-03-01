@@ -47,6 +47,9 @@ client.moonlink.on("trackEnd", async (player, track, payload) => {
   client.channels.cache
     .get(player.textChannelId)
     .send(`Track ended: ${player.previous.title}`);
+  client.user.setPresence({
+        status: "online",
+      });
 });
 
 // Client Events
