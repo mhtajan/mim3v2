@@ -57,6 +57,14 @@ const commands = [
         name: 'non-stop',
         description: 'Toggle non-stop mode',
     },
+    {
+        name: 'clear-queue',
+        description: 'Clear the queue',
+    },
+    {
+        name: 'lyrics',
+        description: 'Get the lyrics of the current song',
+    }
 ];
 
 

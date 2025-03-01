@@ -8,7 +8,7 @@ RUN apt update && apt install -y openjdk-21-jdk
 WORKDIR /app
 
 # Copy Lavalink.jar or bot files into the container
-COPY Lavalink.jar /app
+COPY . /app
 # Or for your bot:
 # COPY . /app
 

@@ -4,12 +4,13 @@ const { getData, getPreview, getTracks, getDetails } =
   require('spotify-url-info')(fetch)
 const client = require("../bot.js");
 const { Events , ActivityType } = require("discord.js");
+const axios = require('axios');
 // Setting up the Moonlink.js manager with Lavalink nodes
 client.moonlink = new Manager({
     nodes: [
         {
             identifier: "node_1",
-            host: "localhost",
+            host: process.env.LAVALINK_HOST,
             password: "youshallnotpass",
             port: 2333,
             secure: false,
@@ -118,6 +119,8 @@ async function play(interaction) {
             const trackLoad = []
             interaction.reply('Loading spotify link');
             for (const track of data) {
+                //need optimization 
+                //need to load the first track and then load the rest in the background
                 const query = `${track.name} ${track.artist}`;
                 const res = await client.moonlink.search({
                     query,
@@ -165,7 +168,6 @@ async function play(interaction) {
             source: "youtube",
             requester: interaction.user.id,
         });
-    
         if (res.loadType === "loadfailed") {
             return interaction.reply({
                 content: `Error: Failed to load the requested track.`,
@@ -189,6 +191,7 @@ async function play(interaction) {
             });
             res.tracks.forEach(track => player.queue.add(track));
         } else {
+            console.log(res)
             player.queue.add(res.tracks[0]);
             interaction.reply({
                 content: `Track added to the queue: ${res.tracks[0].title}`,
@@ -282,6 +285,23 @@ async function nonStop(interaction) {
 async function clearQueue(interaction) {
 
 }
+async function lyrics(interaction) {
+    if (!checkVoiceChannel(interaction)) return;
+    const player = getPlayer(interaction);
+    console.log(player.current)
+    if (!player) return;
+    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(player.current.author)}/${encodeURIComponent(player.current.title)}`;
+    try {
+        const response = await axios.get(url);
+        if (response.data.lyrics) {
+            //interaction.reply(response.data.lyrics);
+        } else {
+            interaction.reply("Lyrics not found");
+        }
+    } catch (error) {
+        interaction.reply("There is an error: " + error.message);
+    }
+}   
 // Interaction Handler
 client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isChatInputCommand) {
@@ -295,5 +315,7 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (commandName === "stop") await stop(interaction);
         else if (commandName === "volume") await volume(interaction);
         else if (commandName === "non-stop") await nonStop(interaction);
+        else if (commandName === "clear-queue") await clearQueue(interaction);
+        else if (commandName === "lyrics") await lyrics(interaction);
     }
 });

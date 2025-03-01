@@ -3,6 +3,7 @@
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "isomorphic-unfetch": "^4.0.2",
+    "lyrics-search": "^1.0.0",
     "moonlink.js": "^4.2.2",
     "spotify-url-info": "^3.2.18"
   }
