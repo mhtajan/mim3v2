@@ -1,4 +1,5 @@
 const { Manager, PlayerManager } = require("moonlink.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const fetch = require("isomorphic-unfetch");
 const { getData, getPreview, getTracks, getDetails } =
   require("spotify-url-info")(fetch);
@@ -27,26 +28,43 @@ client.moonlink = new Manager({
 client.moonlink.on("nodeCreate", (node) => {
   console.log(`${node.host} was connected`);
 });
+
+const playerEmbeds = new Map(); // memory cache for player embeds
+
 client.moonlink.on("trackStart", async (player, track) => {
-  client.channels.cache
-    .get(player.textChannelId)
-    .send(`Now playing: ${player.current.title}`);
-  client.user.setPresence({
-    status: "online",
-    activities: [
-      {
-        name: track.title,
-        type: ActivityType.Watching,
-        url: track.url,
-      },
-    ],
-  });
+    const textChannel = client.channels.cache.get(player.textChannelId);
+    
+    if (!textChannel) return;
+
+    const playerEmbed = new EmbedBuilder()
+        .setTitle(`${track.title}`)
+        .setURL(track.url)
+        .setImage(track.artworkUrl)
+        .setTimestamp()
+        .setFooter({ text: "Now Playing 🎵" });
+
+    // Delete the old embed if it exists
+    if (playerEmbeds.has(player.textChannelId)) {
+        const messageId = playerEmbeds.get(player.textChannelId);
+        try {
+            const oldMessage = await textChannel.messages.fetch(messageId);
+            await oldMessage.delete().catch(() => console.log("Failed to delete old embed."));
+        } catch (err) {
+            console.error("Error fetching/deleting old embed:", err);
+        }
+    }
+
+    // Send new embed and store the message ID
+    const newMessage = await textChannel.send({ embeds: [playerEmbed] });
+    playerEmbeds.set(player.textChannelId, newMessage.id);
+
+    client.user.setPresence({
+        status: "online",
+        activities: [{ name: track.title, type: ActivityType.Watching, url: track.url }],
+    });
 });
 
 client.moonlink.on("trackEnd", async (player, track, payload) => {
-  client.channels.cache
-    .get(player.textChannelId)
-    .send(`Track ended: ${player.previous.title}`);
   client.user.setPresence({
         status: "online",
       });
@@ -85,15 +103,15 @@ function getPlayer(interaction) {
 }
 
 function getQueue(interaction) {
-  const player = getPlayer(interaction);
-  if (!player) return null;
+const player = getPlayer(interaction);
+if (!player) return null;
 
   const queue = player.queue;
   if (!queue || queue.tracks.length === 0) {
-    interaction.reply("The queue is currently empty.");
+    interaction.reply({ content: "The queue is currently empty.", fetchReply: true });
+    setTimeout(() => interaction.deleteReply(), 10000);
     return null;
   }
-
   return queue;
 }
 
@@ -108,6 +126,7 @@ async function play(interaction) {
     voiceChannelId: interaction.member.voice.channel.id,
     textChannelId: interaction.channel.id,
     autoPlay: true,
+    volume: 10,
   });
 
   if (!player.connected) {
@@ -211,14 +230,13 @@ async function play(interaction) {
       });
       res.tracks.forEach((track) => player.queue.add(track));
     } else {
-      console.log(res);
       player.queue.add(res.tracks[0]);
       interaction.reply({
         content: `Track added to the queue: ${res.tracks[0].title}`,
       });
     }
   }
-
+  setTimeout(() => interaction.deleteReply(), 10000);
   if (!player.playing) player.play();
 }
 
@@ -258,7 +276,7 @@ async function skip(interaction) {
 
   const player = getPlayer(interaction);
   if (!player) return;
-
+if(!player.queue) return;
   player.skip();
   interaction.reply("Track skipped.");
 }
@@ -268,7 +286,6 @@ async function queue(interaction) {
   const queueList = queue.tracks
     .map((track, index) => `${index + 1}. ${track.title}`)
     .join("\n");
-
   interaction.reply(`Current queue:\n${queueList}`);
 }
 async function stop(interaction) {
@@ -302,7 +319,8 @@ async function nonStop(interaction) {
     `Non-stop mode is now **${player.autoLeave ? "enabled" : "disabled"}**`
   );
 }
-async function clearQueue(interaction) {}
+async function clearQueue(interaction) {
+}
 async function lyrics(interaction) {
   if (!checkVoiceChannel(interaction)) return;
   const player = getPlayer(interaction);
