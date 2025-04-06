@@ -278,8 +278,6 @@ async function lyrics(interaction) {
 
 }
 async function stat(interaction){
-  const player = getPlayer(interaction);
-  if (!player) return;
   const node = client.moonlink.nodes.get('default');
   const stats = node.getSystemStats();
   const totalSeconds = Math.floor(process.uptime());
