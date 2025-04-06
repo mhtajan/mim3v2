@@ -149,7 +149,6 @@ async function play(interaction) {
       source: "youtube",
       requester: interaction.user.id,
     });
-    console.log(res.tracks[0]);
     if (res.loadType === "loadfailed") {
       return interaction.reply({
         content: `Error: Failed to load the requested track.`,
@@ -282,7 +281,6 @@ async function stat(interaction){
         const uptime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
         const memoryMB = (stats.memoryUsage / 1024 / 1024).toFixed(2); // Convert to MB
         const cpuPercent = (stats.cpuLoad * 100).toFixed(2); // Convert to %\
-        console.log(interaction)
         const embed = new EmbedBuilder()
             .setColor(0x00ff99)
             .setTitle('📊 Bot Statistics')
