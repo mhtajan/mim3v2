@@ -144,11 +144,20 @@ async function play(interaction) {
     player.connect({ setDeaf: true });
   }
   qr = query.toString();
-    const res = await client.moonlink.search({
-      query,
-      source: "youtube",
-      requester: interaction.user.id,
-    });
+  function isSpotifyLink(str) {
+    const regex = /^(https:\/\/(www\.)?spotify\.com\/(?:track|album|artist|playlist)\/[a-zA-Z0-9]{22})$/;
+    return regex.test(str);
+}
+const source = 'youtube';
+if(isSpotifyLink(qr)) {
+  source = 'spotify';
+}
+const res = await client.moonlink.search({
+  query,
+  source: source,
+  requester: interaction.user.id,
+});
+    
     if (res.loadType === "loadfailed") {
       return interaction.reply({
         content: `Error: Failed to load the requested track.`,
