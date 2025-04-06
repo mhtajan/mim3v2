@@ -143,81 +143,13 @@ async function play(interaction) {
   if (!player.connected) {
     player.connect({ setDeaf: true });
   }
-  //if link is spotify
   qr = query.toString();
-  if (
-    qr.includes("https://open.spotify.com") ||
-    qr.includes("https://spoti.fi") ||
-    qr.includes("spotify")
-  ) {
-    try {
-      const data = await getTracks(query);
-      const trackLoad = [];
-      interaction.reply("Loading spotify link");
-      (async () => {
-        const firstTrack = data[0];
-        const query = `${firstTrack.name} ${firstTrack.artist}`;
-        // Search for the first track
-        const res = await client.moonlink.search({
-          query,
-          source: "youtube",
-          requester: interaction.user.id,
-        });
-        if (
-          res.loadType === "loadfailed" ||
-          res.loadType === "error" ||
-          res.loadType === "empty"
-        ) {
-          return;
-        }
-        player.queue.add(res.tracks[0]);
-        if (!player.playing && !player.paused) {
-          player.play();
-        }
-        trackLoad.push(res.tracks[0]);
-        data.slice(1).map(async (track) => {
-          const query = `${track.name} ${track.artist}`;
-
-          const res = await client.moonlink.search({
-            query,
-            source: "youtube",
-            requester: interaction.user.id,
-          });
-
-          if (
-            res.loadType === "loadfailed" ||
-            res.loadType === "error" ||
-            res.loadType === "empty"
-          ) {
-            return; // Skip failed searches
-          }
-
-          player.queue.add(res.tracks[0]);
-          trackLoad.push(res.tracks[0]);
-        });
-      })();
-      if (trackLoad.length > 1) {
-        const trackAdded = trackLoad
-          .map((tr, ix) => `${ix + 1}. ${tr.title}`)
-          .join("\n");
-        interaction.editReply(`Tracks added:\n${trackAdded}`);
-      } else if (trackLoad.length === 1) {
-        interaction.editReply(
-          `Track added to the queue: ${trackLoad[0].title}`
-        );
-      }
-    } catch (error) {
-      interaction.reply({
-        content: `An error occurred: ${error.message}`,
-        ephemeral: true,
-      });
-    }
-  } else {
     const res = await client.moonlink.search({
       query,
       source: "youtube",
       requester: interaction.user.id,
     });
+    console.log(res.tracks[0]);
     if (res.loadType === "loadfailed") {
       return interaction.reply({
         content: `Error: Failed to load the requested track.`,
@@ -246,7 +178,6 @@ async function play(interaction) {
         content: `Track added to the queue: ${res.tracks[0].title}`,
       });
     }
-  }
   setTimeout(() => interaction.deleteReply(), 10000);
   if (!player.playing) player.play();
 }
@@ -294,71 +225,11 @@ async function skip(interaction) {
 async function queue(interaction) {
   const queue = getQueue(interaction);
   if (!queue) return;
-//   const queueList = queue.tracks
-//     .map((track, index) => `${index + 1}. ${track.title}`)
-//     .join("\n");
-//   interaction.reply(`Current queue:\n${queueList}`);
-//   setTimeout(() => interaction.deleteReply(), 10000);
-const tracksPerPage = 10;
-const pages = [];
-
-// Splitting queue into pages
-for (let i = 0; i < queue.tracks.length; i += tracksPerPage) {
-    const trackList = queue.tracks
-        .slice(i, i + tracksPerPage)
-        .map((track, index) => `**${i + index + 1}.** ${track.title}`)
-        .join("\n");
-
-    const embed = new EmbedBuilder()
-        .setTitle("🎶 Music Queue")
-        .setDescription(trackList || "No tracks in queue.")
-        .setFooter({ text: `Page ${Math.ceil(i / tracksPerPage) + 1} of ${Math.ceil(queue.tracks.length / tracksPerPage)}` })
-        .setTimestamp();
-
-    pages.push(embed);
-}
-
-let currentPage = 0;
-
-const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-        .setCustomId("prev")
-        .setLabel("◀️ Previous")
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(currentPage === 0),
-
-    new ButtonBuilder()
-        .setCustomId("next")
-        .setLabel("▶️ Next")
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pages.length === 1)
-);
-
-// Send first page
-const message = await interaction.editReply({ embeds: [pages[currentPage]], components: [row], fetchReply: true });
-
-// Create button collector
-const filter = (i) => i.user.id === interaction.user.id;
-const collector = message.createMessageComponentCollector({ filter, time: 60000 }); // 1 min timeout
-
-collector.on("collect", async (i) => {
-    if (i.customId === "prev") {
-        currentPage = Math.max(currentPage - 1, 0);
-    } else if (i.customId === "next") {
-        currentPage = Math.min(currentPage + 1, pages.length - 1);
-    }
-
-    // Update buttons
-    row.components[0].setDisabled(currentPage === 0);
-    row.components[1].setDisabled(currentPage === pages.length - 1);
-
-    await i.update({ embeds: [pages[currentPage]], components: [row] });
-});
-
-collector.on("end", () => {
-    message.edit({ components: [] }).catch(() => {});
-});
-
+  const queueList = queue.tracks
+    .map((track, index) => `${index + 1}. ${track.title}`)
+    .join("\n");
+  interaction.reply(`Current queue:\n${queueList}`);
+  setTimeout(() => interaction.deleteReply(), 10000);
 }
 async function stop(interaction) {
   if (!checkVoiceChannel(interaction)) return;
@@ -395,21 +266,35 @@ async function clearQueue(interaction) {}
 async function lyrics(interaction) {
   if (!checkVoiceChannel(interaction)) return;
   const player = getPlayer(interaction);
-  console.log(player.current);
+  // Basic usage
+
+}
+async function stat(interaction){
+  const player = getPlayer(interaction);
   if (!player) return;
-  const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(
-    player.current.author
-  )}/${encodeURIComponent(player.current.title)}`;
-  try {
-    const response = await axios.get(url);
-    if (response.data.lyrics) {
-      //interaction.reply(response.data.lyrics);
-    } else {
-      interaction.reply("Lyrics not found");
-    }
-  } catch (error) {
-    interaction.reply("There is an error: " + error.message);
-  }
+  const node = client.moonlink.nodes.get('default');
+  const stats = node.getSystemStats();
+  const totalSeconds = Math.floor(process.uptime());
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const uptime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        const memoryMB = (stats.memoryUsage / 1024 / 1024).toFixed(2); // Convert to MB
+        const cpuPercent = (stats.cpuLoad * 100).toFixed(2); // Convert to %\
+        console.log(interaction)
+        const embed = new EmbedBuilder()
+            .setColor(0x00ff99)
+            .setTitle('📊 Bot Statistics')
+            .addFields(
+                { name: '🟢 Uptime', value: `\`${uptime}\``},
+                { name: '💾 Memory Usage', value: `\`${memoryMB} MB\``},
+                { name: '🧠 CPU Load', value: `\`${cpuPercent}%\``}
+            )
+            .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.client.user.avatarURL()})
+            .setTimestamp();
+        interaction.reply({ embeds: [embed] });
+  
 }
 // Interaction Handler
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -426,5 +311,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     else if (commandName === "non-stop") await nonStop(interaction);
     else if (commandName === "clear-queue") await clearQueue(interaction);
     else if (commandName === "lyrics") await lyrics(interaction);
+    else if (commandName === "stat") await stat(interaction);
   }
 });

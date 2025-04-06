@@ -5,8 +5,7 @@ services:
     ports:
       - "2333:2333"
     restart: always
-    env_file:
-      - /etc/environment  # Add this line to load the env variables from /etc/e>
+
 
   discord-bot:
     build:
@@ -15,8 +14,8 @@ services:
       LAVALINK_HOST: lavalink
       LAVALINK_PORT: 2333
       LAVALINK_PASSWORD: your-password
+      TOKEN: MTIyNzIwNDM3NDY1NzM2ODA5NQ.GKqTkZ.RdmKVk21B5WwRtW6nfksi3Z-u81rAECOvO4uL0
+      CLIENT_ID: 1227204374657368095
     depends_on:
       - lavalink
     restart: always
-    env_file:
-      - /etc/environment  # Add this line to load the env variables from /etc/e>

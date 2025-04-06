@@ -64,6 +64,10 @@ const commands = [
     {
         name: 'lyrics',
         description: 'Get the lyrics of the current song',
+    },
+    {
+        name: 'stat',
+        description: 'Get the status of the bot',
     }
 ];
 
