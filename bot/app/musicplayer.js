@@ -270,7 +270,13 @@ async function nonStop(interaction) {
     `Non-stop mode is now **${player.autoLeave ? "enabled" : "disabled"}**`
   );
 }
-async function clearQueue(interaction) {}
+async function clearQueue(interaction) {
+  player = getPlayer(interaction);
+  if (!player) return;
+  player.queue.clear();
+  interaction.reply("Queue cleared.");
+  setTimeout(() => interaction.deleteReply(), 10000);
+}
 async function lyrics(interaction) {
   if (!checkVoiceChannel(interaction)) return;
   const player = getPlayer(interaction);
@@ -308,6 +314,14 @@ async function restart(interaction) {
   console.log("Triggering app restart...");
   process.exit(1);
 }
+async function shuffle(interaction) {
+  if (!checkVoiceChannel(interaction)) return;
+  const player = getPlayer(interaction);
+  if (!player) return;
+  player.queue.shuffle();
+  interaction.reply("Queue shuffled.");
+  setTimeout(() => interaction.deleteReply(), 10000);
+}
 // Interaction Handler
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand) {
@@ -324,6 +338,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     else if (commandName === "clear-queue") await clearQueue(interaction);
     else if (commandName === "lyrics") await lyrics(interaction);
     else if (commandName === "stat") await stat(interaction);
-    else if (commandName === "restart") await restart(interaction)
+    else if (commandName === "restart") await restart(interaction);
+    else if (commandName === "shuffle") await shuffle(interaction);
   }
 });

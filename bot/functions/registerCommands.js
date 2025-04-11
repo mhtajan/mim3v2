@@ -73,6 +73,10 @@ const commands = [
         name: 'restart',
         description: 'Restart the bot',
         default_member_permissions: '8',
+    },
+    {
+        name: 'shuffle',
+        description: 'Shuffle the queue',
     }
 ];
 
