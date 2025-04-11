@@ -68,6 +68,11 @@ const commands = [
     {
         name: 'stat',
         description: 'Get the status of the bot',
+    },
+    {
+        name: 'restart',
+        description: 'Restart the bot',
+        default_member_permissions: '8',
     }
 ];
 

@@ -301,6 +301,13 @@ async function stat(interaction){
         interaction.reply({ embeds: [embed] });
   
 }
+async function restart(interaction) {
+  interaction.reply(
+  'restarting...'
+  );
+  console.log("Triggering app restart...");
+  process.exit(1);
+}
 // Interaction Handler
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand) {
@@ -317,5 +324,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     else if (commandName === "clear-queue") await clearQueue(interaction);
     else if (commandName === "lyrics") await lyrics(interaction);
     else if (commandName === "stat") await stat(interaction);
+    else if (commandName === "restart") await restart(interaction)
   }
 });
