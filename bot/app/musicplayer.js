@@ -29,9 +29,25 @@ client.moonlink = new Manager({
   },
 });
 
-// Moonlink.js Events
+const defaultNode = manager.nodes.get("default");
+
+// Check if the bot is connected to the Lavalink node
+const isNodeConnected = false;
+
+// Moonlink.js Node Events
 client.moonlink.on("nodeCreate", (node) => {
+  console.log(`${node.host} was created`);
+});
+client.moonlink.on("nodeConnect", (node) => {
+  isNodeConnected = true;
   console.log(`${node.host} was connected`);
+});
+client.moonlink.on("nodeDisconnect", (node) => {
+  isNodeConnected = false;
+  console.log(`${node.host} was disconnected`);
+});
+client.moonlink.on("nodeError", (node, error) => {
+  console.error(`Node error: ${error.message}`);
 });
 
 const playerEmbeds = new Map(); // memory cache for player embeds
@@ -109,6 +125,18 @@ function getPlayer(interaction) {
   }
   return player;
 }
+function checkNodeConnection(interaction) {
+  const node = client.moonlink.nodes.get("default");
+  if (!node || !node.connected) {
+    interaction.reply({
+      content: "Error: The Lavalink node is not connected.",
+      ephemeral: true,
+    });
+    setTimeout(() => interaction.deleteReply(), 10000);
+    return false;
+  }
+  return true;
+}
 
 function getQueue(interaction) {
   const player = getPlayer(interaction);
@@ -130,6 +158,7 @@ function getQueue(interaction) {
 
 async function play(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const query = interaction.options.getString("song");
   const player = client.moonlink.createPlayer({
@@ -145,53 +174,55 @@ async function play(interaction) {
   }
   qr = query.toString();
   function isSpotifyLink(str) {
-    const regex = /^(https:\/\/(www\.)?spotify\.com\/(?:track|album|artist|playlist)\/[a-zA-Z0-9]{22})$/;
+    const regex =
+      /^(https:\/\/(www\.)?spotify\.com\/(?:track|album|artist|playlist)\/[a-zA-Z0-9]{22})$/;
     return regex.test(str);
-}
-const source = 'youtube';
-if(isSpotifyLink(qr)) {
-  source = 'spotify';
-}
-const res = await client.moonlink.search({
-  query,
-  source: source,
-  requester: interaction.user.id,
-});
-    
-    if (res.loadType === "loadfailed") {
-      return interaction.reply({
-        content: `Error: Failed to load the requested track.`,
-        ephemeral: true,
-      });
-    } else if (res.loadType === "empty") {
-      return interaction.reply({
-        content: `Error: No results found for the query.`,
-        ephemeral: true,
-      });
-    }
-    if (res.loadType === "error") {
-      return interaction.reply({
-        content: `${res.error.message}`,
-        ephemeral: true,
-      });
-    }
-    if (res.loadType === "playlist") {
-      interaction.reply({
-        content: `Playlist ${res.playlistInfo.name} has been added to the queue.`,
-      });
-      res.tracks.forEach((track) => player.queue.add(track));
-    } else {
-      player.queue.add(res.tracks[0]);
-      interaction.reply({
-        content: `Track added to the queue: ${res.tracks[0].title}`,
-      });
-    }
+  }
+  const source = "youtube";
+  if (isSpotifyLink(qr)) {
+    source = "spotify";
+  }
+  const res = await client.moonlink.search({
+    query,
+    source: source,
+    requester: interaction.user.id,
+  });
+
+  if (res.loadType === "loadfailed") {
+    return interaction.reply({
+      content: `Error: Failed to load the requested track.`,
+      ephemeral: true,
+    });
+  } else if (res.loadType === "empty") {
+    return interaction.reply({
+      content: `Error: No results found for the query.`,
+      ephemeral: true,
+    });
+  }
+  if (res.loadType === "error") {
+    return interaction.reply({
+      content: `${res.error.message}`,
+      ephemeral: true,
+    });
+  }
+  if (res.loadType === "playlist") {
+    interaction.reply({
+      content: `Playlist ${res.playlistInfo.name} has been added to the queue.`,
+    });
+    res.tracks.forEach((track) => player.queue.add(track));
+  } else {
+    player.queue.add(res.tracks[0]);
+    interaction.reply({
+      content: `Track added to the queue: ${res.tracks[0].title}`,
+    });
+  }
   setTimeout(() => interaction.deleteReply(), 10000);
   if (!player.playing) player.play();
 }
 
 async function pause(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -202,6 +233,7 @@ async function pause(interaction) {
 
 async function resume(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -212,6 +244,7 @@ async function resume(interaction) {
 
 async function autoplay(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -223,6 +256,7 @@ async function autoplay(interaction) {
 }
 async function skip(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -241,6 +275,7 @@ async function queue(interaction) {
 }
 async function stop(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -250,6 +285,7 @@ async function stop(interaction) {
 }
 async function volume(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -260,6 +296,7 @@ async function volume(interaction) {
 }
 async function nonStop(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
 
   const player = getPlayer(interaction);
   if (!player) return;
@@ -281,41 +318,42 @@ async function lyrics(interaction) {
   if (!checkVoiceChannel(interaction)) return;
   const player = getPlayer(interaction);
   // Basic usage
-
 }
-async function stat(interaction){
-  const node = client.moonlink.nodes.get('default');
+async function stat(interaction) {
+  const node = client.moonlink.nodes.get("default");
   const stats = node.getSystemStats();
   const totalSeconds = Math.floor(process.uptime());
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        const uptime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-        const memoryMB = (stats.memoryUsage / 1024 / 1024).toFixed(2); // Convert to MB
-        const cpuPercent = (stats.cpuLoad * 100).toFixed(2); // Convert to %\
-        const embed = new EmbedBuilder()
-            .setColor(0x00ff99)
-            .setTitle('📊 Bot Statistics')
-            .addFields(
-                { name: '🟢 Uptime', value: `\`${uptime}\``},
-                { name: '💾 Memory Usage', value: `\`${memoryMB} MB\``},
-                { name: '🧠 CPU Load', value: `\`${cpuPercent}%\``}
-            )
-            .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.client.user.avatarURL()})
-            .setTimestamp();
-        interaction.reply({ embeds: [embed] });
-  
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const uptime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  const memoryMB = (stats.memoryUsage / 1024 / 1024).toFixed(2); // Convert to MB
+  const cpuPercent = (stats.cpuLoad * 100).toFixed(2); // Convert to %\
+  const embed = new EmbedBuilder()
+    .setColor(0x00ff99)
+    .setTitle("📊 Bot Statistics")
+    .addFields(
+      { name: "🟢 Uptime", value: `\`${uptime}\`` },
+      { name: "💾 Memory Usage", value: `\`${memoryMB} MB\`` },
+      { name: "🧠 CPU Load", value: `\`${cpuPercent}%\`` }
+    )
+    .setFooter({
+      text: `Requested by ${interaction.user.username}`,
+      iconURL: interaction.client.user.avatarURL(),
+    })
+    .setTimestamp();
+  interaction.reply({ embeds: [embed] });
 }
 async function restart(interaction) {
-  interaction.reply(
-  'restarting...'
-  );
+  interaction.reply("restarting...");
   console.log("Triggering app restart...");
   process.exit(1);
 }
 async function shuffle(interaction) {
   if (!checkVoiceChannel(interaction)) return;
+  if (!checkNodeConnection(interaction)) return;
+
   const player = getPlayer(interaction);
   if (!player) return;
   player.queue.shuffle();
