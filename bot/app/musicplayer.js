@@ -29,7 +29,7 @@ client.moonlink = new Manager({
   },
 });
 
-const defaultNode = manager.nodes.get("default");
+//const defaultNode = manager.nodes.get("default");
 
 // Check if the bot is connected to the Lavalink node
 const isNodeConnected = false;
