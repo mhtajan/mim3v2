@@ -1,29 +1,31 @@
-# Mim3 Discord Bot
+# Mim3 Discord Bot (v3)
 
-Welcome to **Mim3**, your ultimate music companion on Discord! Mim3 is built to deliver high-quality audio streaming and an effortless music experience, keeping your server vibing 24/7.
+Welcome to **Mim3v3**, the **third generation** of the Mim3 Discord music bot 🎶.
+This version has been reimagined to be **simpler, faster, and more user-friendly**, making it easier than ever to bring music into your Discord server.
 
-## Features
+With Mim3v3, you get:
 
-- **🎵 Music Playback:** Enjoy smooth, uninterrupted music from your favorite platforms.
-- **📥 YouTube & Spotify Support:** Play songs directly using YouTube or Spotify links.
-- **📝 Easy Commands:** Simple and intuitive commands for playing, pausing, skipping, queuing, and more.
-- **🔁 Playlist & Looping:** Queue multiple songs, shuffle, or loop your favorite tracks.
-- **📡 24/7 Radio Mode:** Keep the tunes going nonstop with optional radio-style playback.
+* **🚀 Streamlined Setup** – Connect quickly to a Lavalink server with minimal configuration.
+* **🎵 Reliable Music Playback** – Play, queue, and manage songs with smooth, high-quality audio.
+* **🛠️ Easy to Use Commands** – A cleaner and more intuitive command system for everyone in your server.
+* **📡 24/7 Music Mode** – Keep the vibes going all day, every day.
 
-Bring the beats with Mim3 and transform your Discord server into a personal concert hall!
+Mim3v3 takes everything you loved about the earlier versions of Mim3 and makes it **lighter, more stable, and easier to manage**.
+
+Bring Mim3v3 into your server and turn it into your personal music lounge!
 
 ---
 
 ## Installation
 
-Follow these steps to install and set up **Mim3 Discord Bot** on your system:
+Follow these steps to install and set up **Mim3v3 Discord Bot** on your system:
 
 ### 1. **Clone the Repository**
 
 Clone the repository to your local machine using Git:
 
 ```bash
-git clone https://github.com/mhtajan/mim3v2.git
+git clone https://github.com/mhtajan/mim3v3.git
 ```
 
 ### 2. **Install Dependencies**
@@ -31,7 +33,7 @@ git clone https://github.com/mhtajan/mim3v2.git
 Navigate to the project directory and install the necessary dependencies:
 
 ```bash
-cd mim3v2
+cd mim3v3
 npm install
 ```
 
@@ -47,43 +49,38 @@ LAVALINK_PORT=2333
 LAVALINK_HOST=localhost
 ```
 
-### 4. **Configure `application.yml`**
+### 4. **Connect to a Lavalink Server**
 
-There is already an `example_application.yml` file in the repository. To configure it:
+Mim3v3 requires a running **Lavalink server** for music playback. You have two options:
 
-1. **Rename the `example_application.yml` file** to `application.yml`:
-   
-   ```bash
-   mv example_application.yml application.yml
-   ```
+1. **Use Your Own Lavalink Server**
 
-2. **Edit the `application.yml` file** with your credentials:
+   * Download Lavalink from the [official repository](https://github.com/freyacodes/Lavalink/releases).
+   * Run it with:
 
-   ```yaml
-   # YouTube Configuration (Required for avoiding age restrictions by YouTube)
-   youtubeConfig:
-     email: <your-google-account-email>    # Email of your Google account
-     password: <your-google-account-password> # Password of your Google account
+     ```bash
+     java -jar Lavalink.jar
+     ```
+   * Make sure the `server.yml` Lavalink configuration matches your `.env` values (`host`, `port`, `password`).
 
-   # Spotify Configuration
-   spotify:
-     clientId: <your-spotify-client-id>    # Spotify Client ID
-     clientSecret: <your-spotify-client-secret> # Spotify Client Secret
+2. **Use a Public Lavalink Node**
 
-   # Lavalink Configuration
-   lavalink:
-     password: youshallnotpass            # Lavalink server password (must match the Lavalink config)
-     port: 2333                           # Lavalink server port
-     host: localhost                      # Lavalink server host (usually localhost)
-   ```
+   * You can also connect to public Lavalink nodes if you don’t want to host one yourself.
+   * Update your `.env` file with the host, port, and password provided by the public node service.
 
-- **YouTube Config**: Use your Google account credentials to handle age-restricted content.
-- **Spotify Config**: Register your application on the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications) to get your `clientId` and `clientSecret`.
-- **Lavalink Config**: Ensure your Lavalink server is set up and running on `localhost:2333` with the correct password.
+Example `.env` using a remote Lavalink node:
+
+```bash
+TOKEN=<your-discord-bot-token>
+CLIENT_ID=<your-discord-client-id>
+LAVALINK_PASSWORD=<remote-node-password>
+LAVALINK_PORT=443
+LAVALINK_HOST=<remote-node-host>
+```
 
 ### 5. **Start the Bot**
 
-Once you've set up your environment variables and the `application.yml` file, start the bot with the following command:
+Once you've set up your environment variables and Lavalink connection, start the bot with the following command:
 
 ```bash
 node ./bot/index.js
@@ -91,16 +88,9 @@ node ./bot/index.js
 
 ### 6. **Invite the Bot to Your Discord Server**
 
-Go to the [Discord Developer Portal](https://discord.com/developers/applications), select your bot, and under the **OAuth2** section, generate an invite link with the necessary permissions (like reading messages, joining voice channels, and managing messages). 
+Go to the [Discord Developer Portal](https://discord.com/developers/applications), select your bot, and under the **OAuth2** section, generate an invite link with the necessary permissions (like reading messages, joining voice channels, and managing messages).
 
 Invite the bot to your server using that link.
 
 ---
 
-### Troubleshooting
-
-- Ensure you have [Node.js](https://nodejs.org/) installed (recommended version: 18.x or later).
-- For issues with the Lavalink server, make sure the Lavalink server is running at `localhost:2333` with the correct password.
-- If you encounter errors related to Spotify or YouTube, double-check your API credentials and ensure that your Google account is set up correctly.
-
----
